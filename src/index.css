@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background-color: #06121f;
+}
+
+/* ---------------- 地图深色底 ---------------- */
+.cc-map {
+  background-color: #06121f;
+}
+
+.leaflet-container {
+  background-color: #06121f;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.leaflet-control-attribution {
+  background: rgba(6, 18, 31, 0.7) !important;
+  color: #5b7a99 !important;
+  backdrop-filter: blur(4px);
+  border-radius: 4px 0 0 0;
+  font-size: 10px;
+}
+
+.leaflet-control-attribution a {
+  color: #7dd3fc !important;
+}
+
+/* 暗色地图下的 tooltip / popup */
+.leaflet-tooltip.cc-tooltip,
+.leaflet-tooltip {
+  background: rgba(11, 26, 43, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.leaflet-tooltip-top::before,
+.leaflet-tooltip-bottom::before,
+.leaflet-tooltip-left::before,
+.leaflet-tooltip-right::before {
+  border-top-color: rgba(11, 26, 43, 0.92);
+  border-bottom-color: rgba(11, 26, 43, 0.92);
+  border-left-color: rgba(11, 26, 43, 0.92);
+  border-right-color: rgba(11, 26, 43, 0.92);
+}
+
+/* ---------------- 玻璃面板 ---------------- */
+.cc-glass {
+  background: rgba(11, 26, 43, 0.72);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------------- 滚动条 ---------------- */
+.cc-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.cc-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cc-scroll::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 3px;
+}
+.cc-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.35);
+}
+
+/* ---------------- 告警脉冲标记 ---------------- */
+.cc-alert-marker {
+  background: transparent;
+}
+.cc-alert-marker__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4), 0 0 12px rgba(239, 68, 68, 0.8);
+}
+.cc-alert-marker__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  animation: cc-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes cc-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.9;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(2.6);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* ---------------- 车辆当前位置标记 ---------------- */
+.cc-truck-marker {
+  background: transparent;
+}
+.cc-truck-marker__pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+.cc-truck-marker__arrow {
+  position: absolute;
+  left: -7px;
+  top: -22px;
+  width: 14px;
+  height: 14px;
+  background: #22d3ee;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8));
+}
+.cc-truck-marker__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 3px solid #06121f;
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.9);
+}
+
+/* ---------------- 时间轴 ---------------- */
+.cc-track {
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.1);
+}
+.cc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.cc-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
