@@ -19,4 +19,12 @@ export const temperatureController = {
     )
     ok(res, alerts)
   },
+
+  spikes(req: Request, res: Response): void {
+    const spikes = temperatureService.getSpikes(
+      req.params.id,
+      queryStr(req.query.date),
+    )
+    ok(res, spikes)
+  },
 }

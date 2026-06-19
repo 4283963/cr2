@@ -10,6 +10,7 @@ import type {
   GpsPoint,
   TemperatureReading,
   TemperatureAlert,
+  TemperatureSpike,
 } from '@shared/types'
 
 interface MonitorState {
@@ -19,6 +20,7 @@ interface MonitorState {
   trajectory: GpsPoint[]
   readings: TemperatureReading[]
   alerts: TemperatureAlert[]
+  spikes: TemperatureSpike[]
   activeIndex: number
 
   loadingVehicles: boolean
@@ -38,6 +40,7 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
   trajectory: [],
   readings: [],
   alerts: [],
+  spikes: [],
   activeIndex: 0,
 
   loadingVehicles: false,
@@ -66,20 +69,23 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
       trajectory: [],
       readings: [],
       alerts: [],
+      spikes: [],
       activeIndex: 0,
     })
     try {
-      const [detail, trajectory, readings, alerts] = await Promise.all([
+      const [detail, trajectory, readings, alerts, spikes] = await Promise.all([
         api.getVehicle(id),
         api.getTrajectory(id),
         api.getTemperatures(id),
         api.getAlerts(id),
+        api.getSpikes(id),
       ])
       set({
         vehicleDetail: detail,
         trajectory,
         readings,
         alerts,
+        spikes,
         activeIndex: Math.max(0, trajectory.length - 1),
         loadingVehicle: false,
       })
@@ -100,6 +106,7 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
       trajectory: [],
       readings: [],
       alerts: [],
+      spikes: [],
       activeIndex: 0,
     })
   },

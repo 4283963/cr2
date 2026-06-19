@@ -24,14 +24,21 @@ import {
   AttributionControl,
 } from 'react-leaflet'
 import type { DivIcon } from 'leaflet'
-import { AlertTriangle, Thermometer, TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  Thermometer,
+  TrendingUp,
+  TrendingDown,
+  Loader2,
+  AlertOctagon,
+} from 'lucide-react'
 import { useMonitorStore } from '@/store/useMonitorStore'
-import { createAlertIcon, createTruckIcon } from './icons'
+import { createAlertIcon, createTruckIcon, createSpikeIcon } from './icons'
 import { FitBounds } from './FitBounds'
 import { formatTime, formatTemp } from '@/utils/format'
 import { simplifyTrajectory, sampleForVisualization } from '@/utils/trajectory'
 import type { SampledPoint } from '@/utils/trajectory'
-import type { TemperatureAlert } from '@shared/types'
+import type { TemperatureAlert, TemperatureSpike } from '@shared/types'
 
 interface AlertGroup {
   key: string
@@ -40,16 +47,25 @@ interface AlertGroup {
   items: TemperatureAlert[]
 }
 
+interface SpikeGroup {
+  key: string
+  lat: number
+  lng: number
+  items: TemperatureSpike[]
+}
+
 const SHANGHAI: [number, number] = [31.23, 121.47]
 
 export function MapView() {
   const trajectory = useMonitorStore((s) => s.trajectory)
   const alerts = useMonitorStore((s) => s.alerts)
+  const spikes = useMonitorStore((s) => s.spikes)
   const activeIndex = useMonitorStore((s) => s.activeIndex)
   const setActiveIndex = useMonitorStore((s) => s.setActiveIndex)
   const loadingVehicle = useMonitorStore((s) => s.loadingVehicle)
 
   const [alertIcon, setAlertIcon] = useState<DivIcon | null>(null)
+  const [spikeIcon, setSpikeIcon] = useState<DivIcon | null>(null)
   const [iconsLoading, setIconsLoading] = useState(true)
 
   // 预创建 DivIcon(只需一次)
@@ -57,8 +73,14 @@ export function MapView() {
     let cancelled = false
     ;(async () => {
       try {
-        const ic = await createAlertIcon()
-        if (!cancelled) setAlertIcon(ic)
+        const [alertIc, spikeIc] = await Promise.all([
+          createAlertIcon(),
+          createSpikeIcon(),
+        ])
+        if (!cancelled) {
+          setAlertIcon(alertIc)
+          setSpikeIcon(spikeIc)
+        }
       } finally {
         if (!cancelled) setIconsLoading(false)
       }
@@ -106,6 +128,22 @@ export function MapView() {
     }
     return Array.from(map.values())
   }, [alerts])
+
+  const spikeGroups = useMemo<SpikeGroup[]>(() => {
+    const map = new Map<string, SpikeGroup>()
+    for (const s of spikes) {
+      const g = map.get(s.timestamp)
+      if (g) g.items.push(s)
+      else
+        map.set(s.timestamp, {
+          key: s.id,
+          lat: s.latitude,
+          lng: s.longitude,
+          items: [s],
+        })
+    }
+    return Array.from(map.values())
+  }, [spikes])
 
   // 折线抽稀
   const simplifiedPositions: [number, number][] = useMemo(() => {
@@ -240,6 +278,68 @@ export function MapView() {
                       )}
                       {formatTemp(a.temperature)}
                     </span>
+                  </div>
+                ))}
+              </div>
+            </Tooltip>
+          </Marker>
+        ))}
+
+      {!iconsLoading &&
+        spikeIcon &&
+        spikeGroups.map((g) => (
+          <Marker
+            key={g.key}
+            position={[g.lat, g.lng]}
+            icon={spikeIcon}
+            zIndexOffset={400}
+          >
+            <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+              <div className="min-w-[180px] font-mono text-[11px]">
+                <div className="mb-1 flex items-center gap-1 text-amber-400">
+                  <AlertOctagon className="h-3 w-3" />
+                  <span className="font-semibold">温度骤变预警</span>
+                </div>
+                <div className="text-slate-300">
+                  {formatTime(g.items[0].timestamp)}
+                </div>
+                <div className="mt-0.5 text-[10px] text-slate-500">
+                  尚未超标,但短时间内变化过快,请关注
+                </div>
+                {g.items.map((s) => (
+                  <div
+                    key={s.id}
+                    className="mt-1.5 flex items-center justify-between gap-3"
+                  >
+                    <div>
+                      <span className="text-slate-300">{s.zoneName}</span>
+                      <span className="ml-1 text-[10px] text-slate-500">
+                        {s.windowSeconds}s 内
+                      </span>
+                    </div>
+                    <span
+                      className={`flex items-center gap-1 ${
+                        s.direction === 'rising' ? 'text-orange-400' : 'text-sky-400'
+                      }`}
+                    >
+                      {s.direction === 'rising' ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {s.delta > 0 ? '+' : ''}
+                      {formatTemp(s.delta)}
+                    </span>
+                  </div>
+                ))}
+                {g.items.map((s) => (
+                  <div
+                    key={`rng-${s.id}`}
+                    className="mt-0.5 flex items-center justify-between gap-3 text-[10px] text-slate-500"
+                  >
+                    <span>{formatTemp(s.temperatureStart)}</span>
+                    <span className="text-slate-600">→</span>
+                    <span>{formatTemp(s.temperatureEnd)}</span>
                   </div>
                 ))}
               </div>

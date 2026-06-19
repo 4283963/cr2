@@ -57,3 +57,14 @@ export async function createTruckIcon(heading: number): Promise<L.DivIcon> {
     iconAnchor: [17, 17],
   })
 }
+
+/** 温度骤变标记:黄色感叹号 */
+export async function createSpikeIcon(): Promise<L.DivIcon> {
+  const L = await getL()
+  return L.divIcon({
+    className: 'cc-spike-marker',
+    html: '<span class="cc-spike-marker__bg"></span><span class="cc-spike-marker__icon">!</span>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  })
+}

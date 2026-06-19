@@ -97,6 +97,35 @@ export interface TemperatureAlert {
   longitude: number;
 }
 
+/**
+ * 温度骤变事件:1 分钟内某温区温度变化超过阈值(默认 5℃)
+ * 即使温度仍在 [minTemp, maxTemp] 范围内,只要短时间内变化过快,
+ * 就有可能是制冷/加热设备故障前兆,需要提醒调度员关注。
+ */
+export interface TemperatureSpike {
+  id: string;
+  vehicleId: string;
+  zoneId: string;
+  zoneName: string;
+  /** 骤变发生的时刻(= 窗口结束点的时间) */
+  timestamp: string;
+  /** 窗口起始温度 */
+  temperatureStart: number;
+  /** 窗口结束温度 */
+  temperatureEnd: number;
+  /** 温度变化量(正数=上升,负数=下降) */
+  delta: number;
+  /** 变化绝对值,用于排序 */
+  deltaAbs: number;
+  /** 骤变方向 */
+  direction: 'rising' | 'falling';
+  /** 时间窗口大小(秒),用于展示"X 秒内变化了 Y℃" */
+  windowSeconds: number;
+  /** 关联轨迹点坐标(用于地图标记) */
+  latitude: number;
+  longitude: number;
+}
+
 /* ============================================================
  * API 端点契约
  * ========================================================== */
@@ -108,6 +137,7 @@ export const API = {
   TRAJECTORY: (id: string) => `/api/vehicles/${id}/trajectory`,
   TEMPERATURES: (id: string) => `/api/vehicles/${id}/temperatures`,
   ALERTS: (id: string) => `/api/vehicles/${id}/alerts`,
+  SPIKES: (id: string) => `/api/vehicles/${id}/spikes`,
   HEALTH: '/api/health',
 } as const;
 

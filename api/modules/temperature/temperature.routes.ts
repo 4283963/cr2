@@ -6,5 +6,6 @@ const router = Router()
 
 router.get('/:id/temperatures', temperatureController.readings)
 router.get('/:id/alerts', temperatureController.alerts)
+router.get('/:id/spikes', temperatureController.spikes)
 
 export default router

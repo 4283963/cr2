@@ -9,6 +9,7 @@ import type {
   GpsPoint,
   TemperatureReading,
   TemperatureAlert,
+  TemperatureSpike,
 } from '@shared/types'
 
 async function request<T>(url: string): Promise<T> {
@@ -47,5 +48,8 @@ export const api = {
   },
   getAlerts(id: string, date?: string): Promise<TemperatureAlert[]> {
     return request<TemperatureAlert[]>(withQuery(API.ALERTS(id), { date }))
+  },
+  getSpikes(id: string, date?: string): Promise<TemperatureSpike[]> {
+    return request<TemperatureSpike[]>(withQuery(API.SPIKES(id), { date }))
   },
 }

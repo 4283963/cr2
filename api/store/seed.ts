@@ -141,6 +141,12 @@ interface VehicleConfig {
   route: keyof typeof ROUTES
   /** 越限注入:在某温区某些轨迹点索引上施加偏移 */
   alertInjections: Array<{ kind: ZoneKind; from: number; to: number; delta: number }>
+  /**
+   * 骤变注入:在某个温度采样点索引上施加瞬时大偏移(>5℃)。
+   * 用于演示骤变检测,即使温度仍在阈值内,短时间内变化过快也要标记。
+   * index 是温度采样点的索引(0 ~ (TRAJECTORY_POINTS * TEMP_SAMPLES_PER_GPS)。
+   */
+  spikeInjections: Array<{ kind: ZoneKind; index: number; delta: number }>
 }
 
 const VEHICLE_CONFIGS: VehicleConfig[] = [
@@ -156,6 +162,10 @@ const VEHICLE_CONFIGS: VehicleConfig[] = [
       { kind: 'chilled', from: 18, to: 22, delta: 4.5 },
       { kind: 'frozen', from: 32, to: 33, delta: 3.5 },
     ],
+    spikeInjections: [
+      { kind: 'chilled', index: 56, delta: 15.8 },
+      { kind: 'frozen', index: 92, delta: -12.2 },
+    ],
   },
   {
     id: 'v2',
@@ -166,6 +176,7 @@ const VEHICLE_CONFIGS: VehicleConfig[] = [
     zones: ['frozen', 'chilled'],
     route: 'hongqiao',
     alertInjections: [{ kind: 'chilled', from: 14, to: 16, delta: 3.0 }],
+    spikeInjections: [],
   },
   {
     id: 'v3',
@@ -179,6 +190,9 @@ const VEHICLE_CONFIGS: VehicleConfig[] = [
       { kind: 'chilled', from: 24, to: 27, delta: 3.8 },
       { kind: 'ambient', from: 6, to: 8, delta: -2.5 },
     ],
+    spikeInjections: [
+      { kind: 'ambient', index: 28, delta: 18.0 },
+    ],
   },
   {
     id: 'v4',
@@ -189,6 +203,7 @@ const VEHICLE_CONFIGS: VehicleConfig[] = [
     zones: ['chilled', 'ambient'],
     route: 'hongqiao',
     alertInjections: [],
+    spikeInjections: [],
   },
   {
     id: 'v5',
@@ -202,11 +217,16 @@ const VEHICLE_CONFIGS: VehicleConfig[] = [
       { kind: 'frozen', from: 10, to: 12, delta: 2.8 },
       { kind: 'ambient', from: 34, to: 36, delta: 4.0 },
     ],
+    spikeInjections: [],
   },
 ]
 
 const TRAJECTORY_POINTS = 44
 const INTERVAL_MIN = 13
+/** 每个轨迹点之间插多少个温度采样点(提高密度,确保 1 分钟窗口能覆盖多个读数) */
+const TEMP_SAMPLES_PER_GPS = 4
+/** 温度采样间隔(分钟)。总间隔 = INTERVAL_MIN / TEMP_SAMPLES_PER_GPS */
+const TEMP_INTERVAL_MIN = INTERVAL_MIN / TEMP_SAMPLES_PER_GPS
 
 /* ---------- 生成入口 ---------- */
 export function seedStore(): void {
@@ -258,19 +278,29 @@ export function seedStore(): void {
       })
     }
 
-    // 温度:每个轨迹点对每个温区生成一条记录
-    for (let i = 0; i < path.length; i++) {
-      const ts = timestampAt(i * INTERVAL_MIN)
+    // 温度:每个 GPS 间隔内采 TEMP_SAMPLES_PER_GPS 个点,提高密度便于骤变检测
+    const totalTempSamples = TRAJECTORY_POINTS * TEMP_SAMPLES_PER_GPS
+    for (let si = 0; si < totalTempSamples; si++) {
+      const ts = timestampAt(si * TEMP_INTERVAL_MIN)
+      // 该温度采样点在哪个 GPS 段内(用于 alertInjections)
+      const gpsIndex = Math.floor(si / TEMP_SAMPLES_PER_GPS)
       for (const kind of cfg.zones) {
         let temp = zoneSetpoint(kind) + zoneNoise(kind)
+        // 越限注入:按 GPS 点索引范围
         for (const inj of cfg.alertInjections) {
-          if (inj.kind === kind && i >= inj.from && i <= inj.to) {
+          if (inj.kind === kind && gpsIndex >= inj.from && gpsIndex <= inj.to) {
+            temp = temp + inj.delta
+          }
+        }
+        // 骤变注入:按温度采样点精确索引,瞬时大偏移
+        for (const inj of cfg.spikeInjections) {
+          if (inj.kind === kind && si === inj.index) {
             temp = temp + inj.delta
           }
         }
         temp = Math.round(temp * 10) / 10
         store.temperatures.push({
-          id: `${cfg.id}-t-${kind}-${String(i).padStart(3, '0')}`,
+          id: `${cfg.id}-t-${kind}-${String(si).padStart(4, '0')}`,
           vehicleId: cfg.id,
           zoneId: zoneIds[kind],
           timestamp: ts,
